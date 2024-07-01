@@ -3,12 +3,47 @@
 import sys
 import math
 import numpy as np
-from numpy import argmax, sqrt, mean, absolute, arange, log10
+from numpy import argmax, sqrt, mean, absolute, arange
 from numpy.fft import fft
 from matplotlib.pyplot import *
 from scipy.signal import blackmanharris
 from scipy.signal import flattop
 from scipy.signal.windows import hann
+
+# window selection
+
+
+def log10(x):
+    x = np.where(x == 0, 1e-100, x)    
+    return np.log10(x)
+
+def get_window(window, ns):
+    if window == "rect":
+        w = np.ones(ns)
+        main_lobe_width = 2
+        print("Rectangular window")
+    elif window == "hanning":
+        w = np.hanning(ns)
+        main_lobe_width = 4
+    elif window == "blackman":
+        w = np.blackman(ns)
+        main_lobe_width = 6
+    elif window == "blackmanharris":
+        w = blackmanharris(ns)
+        main_lobe_width = 10
+    elif window == "hamming":
+        w = np.hamming(ns)
+        main_lobe_width = 4
+    elif window == "flattop":
+        w = flattop(ns)
+        main_lobe_width = 12
+    elif window == "kaiser":
+        w = np.kaiser(ns, 30)
+        main_lobe_width = 20
+    else:
+        raise ValueError("Unknown window type %s" % window)
+
+    return w, main_lobe_width
 
 
 def do_2s_complement(y, nb):
@@ -40,101 +75,102 @@ def tplot(y, fs, ptitle=""):
     show()
 
 
-def fplot(y, fs):
-    yw = y * np.kaiser(len(y), 0.1)
+def fplot(y, fs, ptitle="", window="rect"):
+    w, main_lobe_width = get_window(window, len(y))
+    yw = y * w
     Yw = spectrum(yw)
     N = range(len(y))
     f = np.array(N) * (fs / len(y) / 1000)
     xlabel("Frequency [kHz]")
     ylabel("Full-scale amplitude")
-    plot(f, 20 * np.log10((abs(Yw))))
+    title(ptitle)
+    plot(f, 20 * log10((abs(Yw))))
     show()
 
-def ffplot(Yw, fs):
+
+def pfplot(Yw, fs, ptitle=""):
     N = range(len(Yw))
-    f = np.array(N) * ((fs/2) / len(Yw) / 1000)
+    f = np.array(N) * ((fs / 2) / len(Yw) / 1000)
     xlabel("Frequency [kHz]")
     ylabel("Full-scale amplitude FF")
-    plot(f, 20 * np.log10((abs(Yw))))
+    title(ptitle)
+    plot( 10 * log10((Yw)))
     show()
 
-def thdn(y, fs, test_name, fmax=0):
 
-    small = 1e-30
+def thdn(y, fs, name, fmax=0, window="kaiser"):
+
+    if fmax == 0:
+        fmax = fs / 2
+    small = 1e-100
     # Total signal+noise power before windowing
-    Py = np.sum(y**2)/len(y)
-    print("Py: ", Py)
+    Py = np.sum(y**2) / len(y)
+    #print("Py: ", Py)
 
-    # windowed signal+noise
-    # yw = y*blackmanharris(len(y))
-    # yw = y*flattop(len(y))
-    yw = y*hann(len(y))
+    # window
+    w, main_lobe_width = get_window(window, len(y))
+    yw = y*w
 
-    Pyw = np.sum(y**2)/len(y)
-    print("Pyw = ", Pyw)
+    Pyw = np.sum(y**2) / len(y)
+    #print("Pyw = ", Pyw)
 
     # signal magnitude spectrum
     Y = spectrum(yw)
 
-    #power spectrum with window correction
-    PY = np.abs(Y)**2 / (np.sum(hann(len(y))**2) / len(y))
+    # power spectrum with window correction
+    PY = np.abs(Y) ** 2 * len(Y) / np.sum(w**2)
+    # use half spectrum
+    PY = 2 * PY[0 : len(Y) // 2]
 
-    #compute power from complex spectrum
+    # compute power from complex spectrum
     Py = np.sum(PY)
-    print("Py = ", Py)
-
-    # windowed signal half spectrum
-    YM = 2*abs(Y[range(int(len(y) / 2))])
-    ffplot(YM, fs)
-
-
+    #print("Py = ", Py)
+    #pfplot(PY, fs, name + " Power Spectrum")
 
     # signal power
-    main_lobe_width = 4.0 / len(yw) * fs
-    
-    i = argmax(YM)
-    r = np.arange(i-int(main_lobe_width // 2), i+int(main_lobe_width // 2))
+    i = argmax(PY[0 : int(fmax * len(PY) / fs)])
+    r = np.arange(i - main_lobe_width//2, i + main_lobe_width//2)
+    print("r = ", r)
     # tone frequency
     f = i * fs / len(y)
 
     Ps = np.sum(PY[r])
+    #print("Ps = ", Ps)
+    #print("r, PY[r] = ", r, PY[r])
 
     #
     # noise and distortion  power
     #
-    
+
     # exclude signal
-    YM[r] = small
+    PY[r] = small
 
     # exclude 0-20Hz frequency range
-    YM[range(0,   int(20*len(YM) / (fs/2)))] = small
-
+    PY[range(0, int(20 * len(PY) / (fs / 2)))] = small
+    #print(range(0, int(20 * len(PY) / (fs / 2))))
     # exclude frequencies above fmax
-    if fmax == 0:
-        fmax = fs / 2    
-    YM[range(int(fmax * len(YM) / (fs/2)), len(YM))] = small 
+    PY[range(int(fmax * len(PY) / (fs / 2)), len(PY))] = small
+    #print(range(int(fmax * len(PY) / (fs / 2)), len(PY)))
 
-    #spectral noise power
-    ffplot(YM, fs)
-    
+    # spectral noise power
+    #pfplot(PY, fs, name + " Noise Spectrum")
+
     # compute distortion and noise power
-    Pn = np.sum(YM**2)*sqrt(8)
-
-    # THD+N in dB: 10*log10(Pn)
-    thdn = 10 * np.log10(Pn)
+    Pn = np.sum(PY)
+    #print("r, PY[r] = ", r, PY[r])
+    #print("Pn, max PY, argmax", Pn, np.max(PY), np.argmax(PY))
 
     Ay = sqrt(Ps)
 
-    #signal to noise ratio
-    snr = 10 * np.log10(Ps / Pn)
+    # signal to noise ratio
+    thdn = -10 * log10(Ps / Pn)
 
-    #equivalent number of bits
-    enob = (snr - 1.76) / 6.02
+    # equivalent number of bits
+    enob = (thdn - 1.76) / 6.02
 
-    
     print(
-        "test=%s \t THD+N=%.1f dB \t f=%.4f Hz \t A=%.1f dB \t SNR=%.1f dB \t ENOB=%.1f bits"
-        % (test_name, thdn, f, 20 * np.log10(Ay), snr, enob)
+        "test=%s \t THD+N=%.1f dB \t f=%.4f Hz \t A=%.1f dB \t ENOB=%.1f bits"
+        % (name, thdn, f, 20 * log10(Ay), enob)
     )
 
 
@@ -152,11 +188,13 @@ def tone(fs, f, AdB, ns, nc, fdelta, flimit):
     x = A * np.cos(2 * pi * fa.reshape(nc, 1) * t)
     return x
 
+
 def step(fs, f, AdB, ns):
     A = np.power(10, AdB / 20)
     t = np.array(range(ns), dtype="f8") * (1 / fs)
     x = A * np.heaviside(t, 1)
     return x
+
 
 def impulse(fs, f, AdB, ns):
     A = np.power(10, AdB / 20)
@@ -196,7 +234,6 @@ def lpf(log2nz, log2size, nb):
 
 
 def read_file(infile, fformat, nc, ns):
-
     fp = open(infile, "r")
 
     if fformat == "hex":
