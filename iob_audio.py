@@ -6,9 +6,9 @@ import numpy as np
 from numpy import argmax, sqrt, mean, absolute, arange
 from numpy.fft import fft
 from matplotlib.pyplot import *
-from scipy.signal import blackmanharris
-from scipy.signal import flattop
-from scipy.signal.windows import hann
+#from scipy.signal import blackmanharris
+from scipy.signal import *
+#from scipy.signal.windows import hann
 
 # window selection
 
@@ -98,10 +98,12 @@ def pfplot(Yw, fs, ptitle=""):
     show()
 
 
-def thdn(y, fs, name, fmax=0, window="kaiser"):
+def thdn(y, fs, name, fmax=0, OSR=1, window="kaiser"):
 
     if fmax == 0:
-        fmax = fs / 2
+        fmax = (fs/OSR) / 2
+    print("fmax = ", fmax)
+        
     small = 1e-100
     # Total signal+noise power before windowing
     Py = np.sum(y**2) / len(y)
@@ -114,7 +116,7 @@ def thdn(y, fs, name, fmax=0, window="kaiser"):
     Pyw = np.sum(y**2) / len(y)
     #print("Pyw = ", Pyw)
 
-    # signal magnitude spectrum
+    # magnitude spectrum
     Y = spectrum(yw)
 
     # power spectrum with window correction
@@ -124,19 +126,20 @@ def thdn(y, fs, name, fmax=0, window="kaiser"):
 
     # compute power from complex spectrum
     Py = np.sum(PY)
-    #print("Py = ", Py)
-    #pfplot(PY, fs, name + " Power Spectrum")
+    print("Py = ", Py)
+    pfplot(PY, fs, name + " Power Spectrum")
 
     # signal power
-    i = argmax(PY[0 : int(fmax * len(PY) / fs)])
+    i = argmax(PY[0 : int(len(PY) * fmax / (fs/2))])
     r = np.arange(i - main_lobe_width//2, i + main_lobe_width//2)
-    print("r = ", r)
+    print("r(Ps) Ps ", r, PY[r])
     # tone frequency
     f = i * fs / len(y)
-
+    print(fmax, fs, OSR, len(PY) * fmax / (fs/2))
     Ps = np.sum(PY[r])
-    #print("Ps = ", Ps)
-    #print("r, PY[r] = ", r, PY[r])
+    pfplot(PY[r], fs, name + " Signal Spectrum")
+    print("Ps = ", 10*log10(Ps))
+    print("r, PY[r] = ", r, PY[r])
 
     #
     # noise and distortion  power
@@ -150,15 +153,12 @@ def thdn(y, fs, name, fmax=0, window="kaiser"):
     #print(range(0, int(20 * len(PY) / (fs / 2))))
     # exclude frequencies above fmax
     PY[range(int(fmax * len(PY) / (fs / 2)), len(PY))] = small
-    #print(range(int(fmax * len(PY) / (fs / 2)), len(PY)))
-
-    # spectral noise power
-    #pfplot(PY, fs, name + " Noise Spectrum")
+    print(range(int(fmax * len(PY) / (fs / 2)), len(PY)))
+    pfplot(PY, fs, name + " Noise Spectrum")
 
     # compute distortion and noise power
     Pn = np.sum(PY)
-    #print("r, PY[r] = ", r, PY[r])
-    #print("Pn, max PY, argmax", Pn, np.max(PY), np.argmax(PY))
+    print("Pn, max PY, argmax", 10*log10(Pn), np.max(PY), np.argmax(PY))
 
     Ay = sqrt(Ps)
 
