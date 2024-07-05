@@ -75,7 +75,7 @@ def tplot(y, fs, ptitle=""):
     show()
 
 
-def fplot(y, fs, ptitle="", window="rect"):
+def fplot(y, fs, ptitle="", window="kaiser"):
     w, main_lobe_width = get_window(window, len(y))
     yw = y * w
     Yw = spectrum(yw)
