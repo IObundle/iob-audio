@@ -75,7 +75,7 @@ def tplot(y, fs, ptitle=""):
     show()
 
 
-def fplot(y, fs, ptitle="", window="rect"):
+def fplot(y, fs, ptitle="", window="kaiser"):
     w, main_lobe_width = get_window(window, len(y))
     yw = y * w
     Yw = spectrum(yw)
@@ -160,7 +160,7 @@ def thdn(y, fs, name, fmax=0, OSR=1, window="kaiser"):
     Pn = np.sum(PY)
     print("Pn, max PY, argmax", 10*log10(Pn), np.max(PY), np.argmax(PY))
 
-    Ay = sqrt(Ps)
+    Ay = sqrt(2 * Ps)
 
     # signal to noise ratio
     thdn = -10 * log10(Ps / Pn)
