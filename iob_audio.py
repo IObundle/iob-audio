@@ -160,7 +160,7 @@ def thdn(y, fs, name, fmax=0, window="kaiser"):
     #print("r, PY[r] = ", r, PY[r])
     #print("Pn, max PY, argmax", Pn, np.max(PY), np.argmax(PY))
 
-    Ay = sqrt(Ps)
+    Ay = sqrt(2 * Ps)
 
     # signal to noise ratio
     thdn = -10 * log10(Ps / Pn)
