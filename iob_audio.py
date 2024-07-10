@@ -121,13 +121,14 @@ def thdn(y, fs, name, fmax=0, OSR=1, window="kaiser"):
 
     # power spectrum with window correction
     PY = np.abs(Y) ** 2 * len(Y) / np.sum(w**2)
+    
     # use half spectrum
     PY = 2 * PY[0 : len(Y) // 2]
 
-    # compute power from complex spectrum
+    # compute power from power spectrum
     Py = np.sum(PY)
     print("Py = ", Py)
-    pfplot(PY, fs, name + " Power Spectrum")
+    #pfplot(PY, fs, name + " Power Spectrum")
 
     # signal power
     i = argmax(PY[0 : int(len(PY) * fmax / (fs/2))])
@@ -137,7 +138,7 @@ def thdn(y, fs, name, fmax=0, OSR=1, window="kaiser"):
     f = i * fs / len(y)
     print(fmax, fs, OSR, len(PY) * fmax / (fs/2))
     Ps = np.sum(PY[r])
-    pfplot(PY[r], fs, name + " Signal Spectrum")
+    #pfplot(PY[r], fs, name + " Signal Spectrum")
     print("Ps = ", 10*log10(Ps))
     print("r, PY[r] = ", r, PY[r])
 
@@ -151,14 +152,15 @@ def thdn(y, fs, name, fmax=0, OSR=1, window="kaiser"):
     # exclude 0-20Hz frequency range
     PY[range(0, int(20 * len(PY) / (fs / 2)))] = small
     #print(range(0, int(20 * len(PY) / (fs / 2))))
+
     # exclude frequencies above fmax
     PY[range(int(fmax * len(PY) / (fs / 2)), len(PY))] = small
-    print(range(int(fmax * len(PY) / (fs / 2)), len(PY)))
-    pfplot(PY, fs, name + " Noise Spectrum")
+    #print(range(int(fmax * len(PY) / (fs / 2)), len(PY)))
+    #pfplot(PY, fs, name + " Noise Spectrum")
 
     # compute distortion and noise power
     Pn = np.sum(PY)
-    print("Pn, max PY, argmax", 10*log10(Pn), np.max(PY), np.argmax(PY))
+    #print("Pn, max PY, argmax", 10*log10(Pn), np.max(PY), np.argmax(PY))
 
     Ay = sqrt(2 * Ps)
 
