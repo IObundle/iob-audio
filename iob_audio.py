@@ -135,14 +135,13 @@ def thdn(y, fs, name, fmax=0, OSR=1, window="kaiser"):
     # signal power
     i = argmax(PY[0 : int(len(PY) * fmax / (fs/2))])
     r = np.arange(i - main_lobe_width//2, i + main_lobe_width//2)
-    print("r(Ps) Ps ", r, PY[r])
+    print("r, PY[r] = ", r, PY[r])
     # tone frequency
     f = i * fs / len(y)
     print(fmax, fs, OSR, len(PY) * fmax / (fs/2))
     Ps = np.sum(PY[r])
     #pfplot(PY[r], fs, name + " Signal Spectrum")
     print("Ps = ", 10*log10(Ps))
-    print("r, PY[r] = ", r, PY[r])
 
     #
     # noise and distortion  power
