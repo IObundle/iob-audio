@@ -84,6 +84,8 @@ def fplot(y, fs, ptitle="", window="kaiser"):
     xlabel("Frequency [kHz]")
     ylabel("Full-scale amplitude")
     title(ptitle)
+    #widow correction before printing
+    Yw = Yw * np.sqrt( 2*len(Yw) / np.sum(w**2) )
     plot(f, 20 * log10((abs(Yw))))
     show()
 
