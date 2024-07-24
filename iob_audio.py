@@ -6,9 +6,7 @@ import numpy as np
 from numpy import argmax, sqrt, mean, absolute, arange
 from numpy.fft import fft
 from matplotlib.pyplot import *
-#from scipy.signal import blackmanharris
 from scipy.signal import *
-#from scipy.signal.windows import hann
 
 # window selection
 
@@ -28,9 +26,6 @@ def get_window(window, ns):
     elif window == "blackman":
         w = np.blackman(ns)
         main_lobe_width = 6
-    elif window == "blackmanharris":
-        w = blackmanharris(ns)
-        main_lobe_width = 10
     elif window == "hamming":
         w = np.hamming(ns)
         main_lobe_width = 4
