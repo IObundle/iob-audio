@@ -1,19 +1,16 @@
 #!/usr/bin/env python3
 
 import sys
-import math
 import numpy as np
-from numpy import argmax, sqrt, mean, absolute, arange
-from numpy.fft import fft
-from matplotlib.pyplot import *
-from scipy.signal import *
+import matplotlib.pyplot as plt
 
 # window selection
 
 
 def log10(x):
-    x = np.where(x == 0, 1e-100, x)    
+    x = np.where(x == 0, 1e-100, x)
     return np.log10(x)
+
 
 def get_window(window, ns):
     if window == "rect":
@@ -63,11 +60,11 @@ def spectrum(y):
 def tplot(y, fs, ptitle=""):
     N = range(len(y))
     t = np.array(N) * (1000 / fs)
-    xlabel("Time [ms]")
-    ylabel("Full-scale amplitude")
-    title(ptitle)
-    plot(t, y)
-    show()
+    plt.xlabel("Time [ms]")
+    plt.ylabel("Full-scale amplitude")
+    plt.title(ptitle)
+    plt.plot(t, y)
+    plt.show()
 
 
 def fplot(y, fs, ptitle="", window="kaiser"):
@@ -76,35 +73,35 @@ def fplot(y, fs, ptitle="", window="kaiser"):
     Yw = spectrum(yw)
     N = range(len(y))
     f = np.array(N) * (fs / len(y) / 1000)
-    xlabel("Frequency [kHz]")
-    ylabel("Full-scale amplitude")
-    title(ptitle)
-    #widow correction before printing
+    plt.xlabel("Frequency [kHz]")
+    plt.ylabel("Full-scale amplitude")
+    plt.title(ptitle)
+    # window correction before printing
     Yw = Yw * np.sqrt( 2*len(Yw) / np.sum(w**2) )
-    plot(f, 20 * log10((abs(Yw))))
-    show()
+    plt.plot(f, 20 * log10((abs(Yw))))
+    plt.show()
 
 
 def pfplot(Yw, fs, ptitle=""):
     N = range(len(Yw))
     f = np.array(N) * ((fs / 2) / len(Yw) / 1000)
-    xlabel("Frequency [kHz]")
-    ylabel("Full-scale amplitude FF")
-    title(ptitle)
-    plot( 10 * log10((Yw)))
-    show()
+    plt.xlabel("Frequency [kHz]")
+    plt.ylabel("Full-scale amplitude FF")
+    plt.title(ptitle)
+    plt.plot(10 * log10((Yw)))
+    plt.show()
 
 
 def thdn(y, fs, name, fmax=0, OSR=1, window="kaiser"):
 
     if fmax == 0:
-        fmax = (fs/OSR) / 2
+        fmax = (fs / OSR) / 2
     print("fmax = ", fmax)
-        
+
     small = 1e-100
     # Total signal+noise power before windowing
     Py = np.sum(y**2) / len(y)
-    #print("Py: ", Py)
+    # print("Py: ", Py)
 
     # window
     w, main_lobe_width = get_window(window, len(y))
@@ -118,17 +115,17 @@ def thdn(y, fs, name, fmax=0, OSR=1, window="kaiser"):
 
     # power spectrum with window correction
     PY = np.abs(Y) ** 2 * len(Y) / np.sum(w**2)
-    
+
     # use half spectrum
     PY = 2 * PY[0 : len(Y) // 2]
 
     # compute power from power spectrum
     Py = np.sum(PY)
     print("Py = ", Py)
-    #pfplot(PY, fs, name + " Power Spectrum")
+    # pfplot(PY, fs, name + " Power Spectrum")
 
     # signal power
-    i = argmax(PY[0 : int(len(PY) * fmax / (fs/2))])
+    i = np.argmax(PY[0 : int(len(PY) * fmax / (fs/2))])
     r = np.arange(i - main_lobe_width//2, i + main_lobe_width//2)
     print("r, PY[r] = ", r, PY[r])
     # tone frequency
@@ -156,9 +153,9 @@ def thdn(y, fs, name, fmax=0, OSR=1, window="kaiser"):
 
     # compute distortion and noise power
     Pn = np.sum(PY)
-    #print("Pn, max PY, argmax", 10*log10(Pn), np.max(PY), np.argmax(PY))
+    #print("Pn, max PY, np.argmax", 10*log10(Pn), np.max(PY), np.argmax(PY))
 
-    Ay = sqrt(2 * Ps)
+    Ay = np.sqrt(2 * Ps)
 
     # signal to noise ratio
     thdn = -10 * log10(Ps / Pn)
