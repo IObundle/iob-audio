@@ -12,6 +12,30 @@ def log10(x):
     return np.log10(x)
 
 
+def blackman_harris_7term(N):
+    n = np.arange(N)
+    # coefficients, from: https://www.ni.com/docs/en-US/bundle/ni-wlan-toolkit-analysis/page/cviwlanalysis/values_fftwindowtype.html
+    a = [
+        0.27105140069342,
+        0.43329793923448,
+        0.21812299954311,
+        0.06592544638803,
+        0.01081174209837,
+        0.00077658482522,
+        0.00001388721735,
+    ]
+    window = (
+        a[0]
+        - a[1] * np.cos(2 * np.pi * n / (N - 1))
+        + a[2] * np.cos(4 * np.pi * n / (N - 1))
+        - a[3] * np.cos(6 * np.pi * n / (N - 1))
+        + a[4] * np.cos(8 * np.pi * n / (N - 1))
+        - a[5] * np.cos(10 * np.pi * n / (N - 1))
+        + a[6] * np.cos(12 * np.pi * n / (N - 1))
+    )
+    return window
+
+
 def get_window(window, ns):
     if window == "rect":
         w = np.ones(ns)
@@ -32,6 +56,9 @@ def get_window(window, ns):
     elif window == "kaiser":
         w = np.kaiser(ns, 30)
         main_lobe_width = 20
+    elif window == "blackman-harris":
+        w = blackman_harris_7term(ns)
+        main_lobe_width = 14
     else:
         raise ValueError("Unknown window type %s" % window)
 
